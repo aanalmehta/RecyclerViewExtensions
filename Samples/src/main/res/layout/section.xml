@@ -2,7 +2,7 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="18dip"
-    android:background="@drawable/section_selector">
+    android:background="@drawable/section_background">
 
     <TextView
         android:id="@android:id/text1"

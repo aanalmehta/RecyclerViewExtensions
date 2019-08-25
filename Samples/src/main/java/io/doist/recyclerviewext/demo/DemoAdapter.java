@@ -13,6 +13,8 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.List;
 
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import io.doist.recyclerviewext.R;
 import io.doist.recyclerviewext.animations.AnimatedAdapter;
@@ -22,7 +24,8 @@ import io.doist.recyclerviewext.sticky_headers.StickyHeaders;
 
 public class DemoAdapter extends AnimatedAdapter<BindableViewHolder>
         implements StickyHeaders, DragDropHelper.Callback {
-    private boolean mHorizontal;
+    @RecyclerView.Orientation
+    private int mOrientation;
 
     private Selector mSelector;
 
@@ -30,9 +33,9 @@ public class DemoAdapter extends AnimatedAdapter<BindableViewHolder>
 
     private List<Object> mDataset;
 
-    DemoAdapter(boolean horizontal) {
+    DemoAdapter(int orientation) {
         super();
-        mHorizontal = horizontal;
+        mOrientation = orientation;
     }
 
     void setDataset(List<Object> dataset) {
@@ -48,24 +51,40 @@ public class DemoAdapter extends AnimatedAdapter<BindableViewHolder>
         mDragDropHelper = dragDropHelper;
     }
 
+    @NonNull
     @Override
     public BindableViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         LayoutInflater inflater = LayoutInflater.from(parent.getContext());
         if (viewType == 0) {
-            return new DemoItemViewHolder(
-                    inflater.inflate(mHorizontal ? R.layout.item_horizontal : R.layout.item, parent, false));
+            return new DemoItemViewHolder(inflater.inflate(
+                    mOrientation == LinearLayoutManager.VERTICAL ?
+                    R.layout.item : R.layout.item_horizontal, parent, false));
         } else {
-            return new DemoSectionViewHolder(
-                    inflater.inflate(mHorizontal ? R.layout.section_horizontal : R.layout.section, parent, false));
+            return new DemoSectionViewHolder(inflater.inflate(
+                    mOrientation == LinearLayoutManager.VERTICAL ?
+                    R.layout.section : R.layout.section_horizontal, parent, false));
         }
     }
 
     @Override
-    public void onBindViewHolder(BindableViewHolder holder, int position) {
-        if (mSelector != null) {
-            mSelector.bind(holder, true);
+    public void onBindViewHolder(
+            @NonNull BindableViewHolder holder, int position, @NonNull List<Object> payloads) {
+        if (payloads.contains(Selector.PAYLOAD_SELECT)) {
+            if (mSelector != null) {
+                mSelector.bind(holder, false);
+            }
+        } else if (payloads.isEmpty()) {
+            if (mSelector != null) {
+                mSelector.bind(holder, true);
+            }
+            holder.bind(mDataset.get(position));
         }
-        holder.bind(mDataset.get(position));
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull BindableViewHolder holder, int position) {
+        throw new RuntimeException(
+                "Use onBindViewHolder(ProjectViewHolder, int, List<Object>) instead");
     }
 
     @Override
@@ -97,13 +116,14 @@ public class DemoAdapter extends AnimatedAdapter<BindableViewHolder>
     public void onDragStarted(final RecyclerView.ViewHolder holder) {
         holder.itemView.setBackgroundColor(Color.WHITE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            holder.itemView.animate().translationZ(8f).setDuration(200L).setListener(new AnimatorListenerAdapter() {
-                @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    holder.itemView.setTranslationZ(8f);
-                }
-            });
+            holder.itemView.animate().translationZ(8f).setDuration(200L)
+                           .setListener(new AnimatorListenerAdapter() {
+                               @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+                               @Override
+                               public void onAnimationEnd(Animator animation) {
+                                   holder.itemView.setTranslationZ(8f);
+                               }
+                           });
         }
     }
 
@@ -123,13 +143,14 @@ public class DemoAdapter extends AnimatedAdapter<BindableViewHolder>
     @Override
     public void onDragStopped(final RecyclerView.ViewHolder holder) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            holder.itemView.animate().translationZ(0f).setDuration(200L).setListener(new AnimatorListenerAdapter() {
-                @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    holder.itemView.setTranslationZ(0f);
-                }
-            });
+            holder.itemView.animate().translationZ(0f).setDuration(200L)
+                           .setListener(new AnimatorListenerAdapter() {
+                               @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+                               @Override
+                               public void onAnimationEnd(Animator animation) {
+                                   holder.itemView.setTranslationZ(0f);
+                               }
+                           });
         }
     }
 

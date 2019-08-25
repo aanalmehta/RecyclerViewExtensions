@@ -7,10 +7,6 @@
         android:title="Load"
         app:showAsAction="always" />
     <item
-        android:id="@+id/action_items"
-        android:title="Items"
-        app:showAsAction="always" />
-    <item
         android:id="@+id/action_selector"
         android:title="Selector"
         app:showAsAction="always" />

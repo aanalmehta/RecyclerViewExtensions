@@ -10,6 +10,8 @@ android {
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
+
+        vectorDrawables.useSupportLibrary = true
     }
 
     buildTypes {
@@ -20,8 +22,8 @@ android {
 }
 
 dependencies {
-    implementation "androidx.appcompat:appcompat:1.0.2"
     implementation "androidx.recyclerview:recyclerview:1.0.0"
+    implementation "com.google.android.material:material:1.0.0"
 
     implementation project(':Animations')
     implementation project(':ClickListeners')

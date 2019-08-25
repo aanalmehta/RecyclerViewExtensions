@@ -3,6 +3,7 @@ package io.doist.recyclerviewext.demo;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
@@ -27,7 +28,6 @@ public class DemoActivity extends AppCompatActivity
         implements PinchZoomItemTouchListener.PinchZoomListener {
     private ViewGroup mContainer;
     private RecyclerView mRecyclerView;
-    private LinearLayoutManager mLinearLayoutManager;
     private DemoAdapter mAdapter;
     private ProgressEmptyRecyclerFlipper mProgressEmptyRecyclerFlipper;
     private DragDropHelper mDragDropHelper;
@@ -46,19 +46,22 @@ public class DemoActivity extends AppCompatActivity
         mContainer = findViewById(R.id.container);
         mRecyclerView = findViewById(R.id.recycler_view);
         mRecyclerView.setHasFixedSize(true);
-        mLinearLayoutManager = new StickyHeadersLinearLayoutManager(this);
-        mRecyclerView.setLayoutManager(mLinearLayoutManager);
-        mRecyclerView.addItemDecoration(new DividerItemDecoration(this, R.drawable.divider_light, true));
-        mAdapter = new DemoAdapter(false);
-        mProgressEmptyRecyclerFlipper =
-                new ProgressEmptyRecyclerFlipper(mContainer, R.id.recycler_view, R.id.empty, R.id.loading);
-        mProgressEmptyRecyclerFlipper.monitor(mAdapter);
-        mRecyclerView.setAdapter(mAdapter);
         mRecyclerView.setItemAnimator(new WithLayerItemAnimator(true));
-        mDragDropHelper = new DragDropHelper();
-        mDragDropHelper.attach(mRecyclerView, mAdapter);
-        mAdapter.setDragDropHelper(mDragDropHelper);
+        mRecyclerView.addItemDecoration(new DividerItemDecoration(this, R.drawable.divider_light, true));
         mRecyclerView.addOnItemTouchListener(new PinchZoomItemTouchListener(this, this));
+
+        mProgressEmptyRecyclerFlipper = new ProgressEmptyRecyclerFlipper(
+                mContainer, R.id.recycler_view, R.id.empty, R.id.loading);
+        mDragDropHelper = new DragDropHelper();
+
+        setLayout(mLayoutCount);
+        
+        findViewById(R.id.fab).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                setNextAdapterItems();
+            }
+        });
     }
 
     @Override
@@ -81,16 +84,12 @@ public class DemoActivity extends AppCompatActivity
                 }, 2000);
                 return true;
 
-            case R.id.action_items:
-                setNextAdapterItems();
-                return true;
-
             case R.id.action_selector:
                 setNextSelector();
                 return true;
 
             case R.id.action_layout:
-                setNextLayout();
+                setLayout(++mLayoutCount);
                 return true;
 
             default:
@@ -115,8 +114,8 @@ public class DemoActivity extends AppCompatActivity
     };
 
     public void setNextAdapterItems() {
-        mAdapter.setDataset(getAdapterItems());
         mDataCount++;
+        mAdapter.setDataset(getAdapterItems());
     }
 
     public List<Object> getAdapterItems() {
@@ -138,19 +137,36 @@ public class DemoActivity extends AppCompatActivity
         }
     }
 
-    public void setNextLayout() {
-        int orientation = mLayoutCount % 2 == 0 ? LinearLayoutManager.VERTICAL : LinearLayoutManager.HORIZONTAL;
-        boolean reverse = mLayoutCount % 3 == 0;
-        mAdapter = new DemoAdapter(orientation == LinearLayoutManager.HORIZONTAL);
+    public void setLayout(int layout) {
+        @RecyclerView.Orientation int orientation;
+        boolean reverse;
+        switch (layout % 4) {
+            case 0:
+                orientation = LinearLayoutManager.VERTICAL;
+                reverse = false;
+                break;
+            case 1:
+                orientation = LinearLayoutManager.VERTICAL;
+                reverse = true;
+                break;
+            case 3:
+                orientation = LinearLayoutManager.HORIZONTAL;
+                reverse = true;
+                break;
+            default:
+                orientation = LinearLayoutManager.HORIZONTAL;
+                reverse = false;
+                break;
+        }
+        mAdapter = new DemoAdapter(orientation);
+        mDragDropHelper.attach(mRecyclerView, mAdapter);
         mAdapter.setDragDropHelper(mDragDropHelper);
         mAdapter.setDataset(getAdapterItems());
         if (mSelector != null) {
             mAdapter.setSelector(mSelector);
         }
-        mLinearLayoutManager = new StickyHeadersLinearLayoutManager(this, orientation, reverse);
-        mRecyclerView.setLayoutManager(mLinearLayoutManager);
+        mRecyclerView.setLayoutManager(new StickyHeadersLinearLayoutManager(this, orientation, reverse));
         mProgressEmptyRecyclerFlipper.monitor(mAdapter);
         mRecyclerView.setAdapter(mAdapter);
-        mLayoutCount++;
     }
 }
