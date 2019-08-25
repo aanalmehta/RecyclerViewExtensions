@@ -25,7 +25,7 @@ import io.doist.recyclerviewext.sticky_headers.StickyHeaders;
 public class DemoAdapter extends AnimatedAdapter<BindableViewHolder>
         implements StickyHeaders, DragDropHelper.Callback {
     @RecyclerView.Orientation
-    private int mOrientation;
+    private final int mOrientation;
 
     private Selector mSelector;
 
@@ -156,8 +156,8 @@ public class DemoAdapter extends AnimatedAdapter<BindableViewHolder>
 
     public class DemoItemViewHolder extends BindableViewHolder implements View.OnClickListener,
                                                                           View.OnLongClickListener {
-        TextView textView1;
-        TextView textView2;
+        final TextView textView1;
+        final TextView textView2;
 
         DemoItemViewHolder(View itemView) {
             super(itemView);
@@ -189,7 +189,7 @@ public class DemoAdapter extends AnimatedAdapter<BindableViewHolder>
     }
 
     public class DemoSectionViewHolder extends BindableViewHolder implements View.OnClickListener {
-        TextView textView;
+        final TextView textView;
 
         DemoSectionViewHolder(View itemView) {
             super(itemView);
