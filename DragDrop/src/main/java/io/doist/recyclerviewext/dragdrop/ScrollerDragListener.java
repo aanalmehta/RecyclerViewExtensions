@@ -17,6 +17,10 @@ import androidx.recyclerview.widget.RecyclerView;
 /**
  * {@link android.view.View.OnDragListener} for {@link androidx.recyclerview.widget.RecyclerView}
  * that scrolls when near the edges.
+ *
+ * This class provides no way of handling {@link DragEvent#ACTION_DROP} and other events.
+ * Use {@link DropDragListener} or create your own {@link View.OnDragListener},
+ * and combine it using {@link CombiningDragListener} to do so.
  */
 public class ScrollerDragListener implements View.OnDragListener, Runnable {
     /**
