@@ -22,7 +22,10 @@ import androidx.recyclerview.widget.RecyclerView;
  *
  * Call {@link #start(RecyclerView.ViewHolder)} during or right before a motion event to start dragging that specific
  * {@link RecyclerView.ViewHolder}. Call {@link #stop()} to stop the ongoing drag at the current position.
+ *
+ * @deprecated Use the other classes in this package instead, which use Android's APIs for drag & drop.
  */
+@Deprecated
 public class DragDropHelper extends RecyclerView.ItemDecoration
         implements RecyclerView.OnItemTouchListener, RecyclerView.ChildDrawingOrderCallback,
                    RecyclerView.OnChildAttachStateChangeListener {
@@ -281,8 +284,6 @@ public class DragDropHelper extends RecyclerView.ItemDecoration
 
     @Override
     public void onDraw(@NonNull Canvas c, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
-        super.onDraw(c, parent, state);
-
         if (mState != STATE_NONE && mState != STATE_STOPPING) {
             boolean dragging = mState == STATE_DRAGGING;
 
