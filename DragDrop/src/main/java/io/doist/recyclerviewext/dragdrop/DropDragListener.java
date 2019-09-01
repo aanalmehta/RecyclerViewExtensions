@@ -32,7 +32,7 @@ public class DropDragListener implements View.OnDragListener {
                 callback.onDragEnded(event.getClipDescription());
                 break;
         }
-        return true;
+        return false;
     }
 
     private void drop(ClipDescription description, ClipData data, float x, float y) {

@@ -1,11 +1,12 @@
 package io.doist.recyclerviewext.demo;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.annotation.TargetApi;
+import android.annotation.SuppressLint;
+import android.content.ClipDescription;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
@@ -19,19 +20,20 @@ import androidx.recyclerview.widget.RecyclerView;
 import io.doist.recyclerviewext.R;
 import io.doist.recyclerviewext.animations.AnimatedAdapter;
 import io.doist.recyclerviewext.choice_modes.Selector;
-import io.doist.recyclerviewext.dragdrop.DragDropHelper;
+import io.doist.recyclerviewext.dragdrop.PlaceholderDragListener;
+import io.doist.recyclerviewext.dragdrop.PositionedDragShadowBuilder;
 import io.doist.recyclerviewext.sticky_headers.StickyHeaders;
 
 public class DemoAdapter extends AnimatedAdapter<BindableViewHolder>
-        implements StickyHeaders, DragDropHelper.Callback {
+        implements StickyHeaders, PlaceholderDragListener.Callback {
     @RecyclerView.Orientation
     private final int mOrientation;
 
     private Selector mSelector;
 
-    private DragDropHelper mDragDropHelper;
-
     private List<Object> mDataset;
+
+    private int mDraggedPosition;
 
     DemoAdapter(int orientation) {
         super();
@@ -45,10 +47,6 @@ public class DemoAdapter extends AnimatedAdapter<BindableViewHolder>
 
     void setSelector(Selector selector) {
         mSelector = selector;
-    }
-
-    void setDragDropHelper(DragDropHelper dragDropHelper) {
-        mDragDropHelper = dragDropHelper;
     }
 
     @NonNull
@@ -113,57 +111,37 @@ public class DemoAdapter extends AnimatedAdapter<BindableViewHolder>
     }
 
     @Override
-    public void onDragStarted(final RecyclerView.ViewHolder holder) {
-        holder.itemView.setBackgroundColor(Color.WHITE);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            holder.itemView.animate().translationZ(8f).setDuration(200L)
-                           .setListener(new AnimatorListenerAdapter() {
-                               @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-                               @Override
-                               public void onAnimationEnd(Animator animation) {
-                                   holder.itemView.setTranslationZ(8f);
-                               }
-                           });
-        }
+    public int onDragStarted(ClipDescription description, Object localState) {
+        return mDraggedPosition;
     }
 
     @Override
-    public boolean canSwap(RecyclerView.ViewHolder holder, RecyclerView.ViewHolder target) {
-        return true; //holder.getClass() == target.getClass();
+    public int onSwap(int position, int newPosition, float eventX, float eventY) {
+        mDataset.add(newPosition, mDataset.remove(position));
+        notifyItemMoved(position, newPosition);
+        mDraggedPosition = newPosition;
+        return mDraggedPosition;
     }
 
     @Override
-    public void onSwap(RecyclerView.ViewHolder holder, RecyclerView.ViewHolder target) {
-        int from = holder.getAdapterPosition();
-        int to = target.getAdapterPosition();
-        mDataset.add(to, mDataset.remove(from));
-        notifyItemMoved(from, to);
+    public void onDragEnded(ClipDescription description, Object localState) {
+        mDraggedPosition = RecyclerView.NO_POSITION;
     }
 
-    @Override
-    public void onDragStopped(final RecyclerView.ViewHolder holder) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            holder.itemView.animate().translationZ(0f).setDuration(200L)
-                           .setListener(new AnimatorListenerAdapter() {
-                               @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-                               @Override
-                               public void onAnimationEnd(Animator animation) {
-                                   holder.itemView.setTranslationZ(0f);
-                               }
-                           });
-        }
-    }
-
-    public class DemoItemViewHolder extends BindableViewHolder implements View.OnClickListener,
-                                                                          View.OnLongClickListener {
+    public class DemoItemViewHolder extends BindableViewHolder
+            implements View.OnClickListener, View.OnLongClickListener, View.OnTouchListener {
         final TextView textView1;
         final TextView textView2;
+
+        private int downX;
+        private int downY;
 
         DemoItemViewHolder(View itemView) {
             super(itemView);
 
             itemView.setOnClickListener(this);
             itemView.setOnLongClickListener(this);
+            itemView.setOnTouchListener(this);
 
             this.textView1 = itemView.findViewById(android.R.id.text1);
             this.textView2 = itemView.findViewById(android.R.id.text2);
@@ -183,8 +161,28 @@ public class DemoAdapter extends AnimatedAdapter<BindableViewHolder>
 
         @Override
         public boolean onLongClick(View v) {
-            mDragDropHelper.start(DemoItemViewHolder.this);
+            mDraggedPosition = getAdapterPosition();
+            Drawable background = v.getBackground();
+            v.setBackgroundColor(Color.WHITE);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                v.startDragAndDrop(
+                        null, new PositionedDragShadowBuilder(v, downX, downY), null, View.DRAG_FLAG_OPAQUE);
+            } else {
+                v.startDrag(null, new PositionedDragShadowBuilder(v, downX, downY), null, 0);
+            }
+            v.setBackground(background);
+            v.setVisibility(View.INVISIBLE);
             return true;
+        }
+
+        @SuppressLint("ClickableViewAccessibility")
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                downX = (int) event.getX();
+                downY = (int) event.getY();
+            }
+            return false;
         }
     }
 

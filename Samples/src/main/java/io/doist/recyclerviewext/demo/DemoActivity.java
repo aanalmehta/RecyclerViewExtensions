@@ -1,9 +1,14 @@
 package io.doist.recyclerviewext.demo;
 
+import android.annotation.SuppressLint;
+import android.content.ClipDescription;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
@@ -19,7 +24,11 @@ import io.doist.recyclerviewext.choice_modes.MultiSelector;
 import io.doist.recyclerviewext.choice_modes.Selector;
 import io.doist.recyclerviewext.choice_modes.SingleSelector;
 import io.doist.recyclerviewext.dividers.DividerItemDecoration;
-import io.doist.recyclerviewext.dragdrop.DragDropHelper;
+import io.doist.recyclerviewext.dragdrop.CombiningDragListener;
+import io.doist.recyclerviewext.dragdrop.PlaceholderDragListener;
+import io.doist.recyclerviewext.dragdrop.PositionedDragShadowBuilder;
+import io.doist.recyclerviewext.dragdrop.ScrollerDragListener;
+import io.doist.recyclerviewext.dragdrop.VisibilityDragListener;
 import io.doist.recyclerviewext.flippers.ProgressEmptyRecyclerFlipper;
 import io.doist.recyclerviewext.pinch_zoom.PinchZoomItemTouchListener;
 import io.doist.recyclerviewext.sticky_headers.StickyHeadersLinearLayoutManager;
@@ -28,9 +37,9 @@ public class DemoActivity extends AppCompatActivity
         implements PinchZoomItemTouchListener.PinchZoomListener {
     private ViewGroup mContainer;
     private RecyclerView mRecyclerView;
+    private LinearLayoutManager mLayoutManager;
     private DemoAdapter mAdapter;
     private ProgressEmptyRecyclerFlipper mProgressEmptyRecyclerFlipper;
-    private DragDropHelper mDragDropHelper;
 
     private Selector mSelector;
 
@@ -52,14 +61,47 @@ public class DemoActivity extends AppCompatActivity
 
         mProgressEmptyRecyclerFlipper = new ProgressEmptyRecyclerFlipper(
                 mContainer, R.id.recycler_view, R.id.empty, R.id.loading);
-        mDragDropHelper = new DragDropHelper();
 
         setLayout(mLayoutCount);
-        
-        findViewById(R.id.fab).setOnClickListener(new View.OnClickListener() {
+
+        final View fab = findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 setNextAdapterItems();
+            }
+        });
+        fab.setOnDragListener(new VisibilityDragListener(fab));
+        fab.setOnTouchListener(new View.OnTouchListener() {
+            int downX;
+            int downY;
+            boolean dragging;
+            int touchSlop = ViewConfiguration.get(fab.getContext()).getScaledTouchSlop();
+
+            @SuppressLint("ClickableViewAccessibility")
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        downX = (int) event.getX();
+                        downY = (int) event.getY();
+                        dragging = false;
+                        break;
+
+                    case MotionEvent.ACTION_MOVE:
+                        if (!dragging && Math.max(
+                                Math.abs(event.getRawX() - downX), Math.abs(event.getRawY() - downY)) > touchSlop) {
+                            dragging = true;
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                                v.startDragAndDrop(
+                                        null, new PositionedDragShadowBuilder(fab, downX, downY), null,
+                                        View.DRAG_FLAG_OPAQUE);
+                            } else {
+                                v.startDrag(null, new PositionedDragShadowBuilder(fab, downX, downY), null, 0);
+                            }
+                        }
+                }
+                return false;
             }
         });
     }
@@ -103,13 +145,16 @@ public class DemoActivity extends AppCompatActivity
     }
 
     private static final Object[][] ITEMS = {
+            {1, "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", 2, 3, "k", "l", 4, "m", "n", "o", "p", "q", "r", "s",
+             "t", "u", "v", "w", "x", "y", "z", 5},
             {"e", "b", "f", "a", "c", "d"},
             {"f", "g", "h", "e"},
-            {1,"a","b","c","d","e","f","g","h","i","j",2,3,"k","l",4,"m","n","o","p","q","r","s","t","u","v","w","x","y","z"},
-            {2,"c","f","b"},
-            {"c","e",2,"b"},
-            {1,"a",2,3,"c","b","d",4,"f","e","h","j","i","g"},
-            {"d","c","b","a","e","f","g","h","i","j","k","l","m","n","o"},
+            {1, "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", 2, 3, "k", "l", 4, "m", "n", "o", "p", "q", "r", "s",
+             "t", "u", "v", "w", "x", "y", "z"},
+            {2, "c", "f", "b"},
+            {"c", "e", 2, "b"},
+            {1, "a", 2, 3, "c", "b", "d", 4, "f", "e", "h", "j", "i", "g"},
+            {"d", "c", "b", "a", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o"},
             {}
     };
 
@@ -159,14 +204,27 @@ public class DemoActivity extends AppCompatActivity
                 break;
         }
         mAdapter = new DemoAdapter(orientation);
-        mDragDropHelper.attach(mRecyclerView, mAdapter);
-        mAdapter.setDragDropHelper(mDragDropHelper);
         mAdapter.setDataset(getAdapterItems());
         if (mSelector != null) {
             mAdapter.setSelector(mSelector);
         }
-        mRecyclerView.setLayoutManager(new StickyHeadersLinearLayoutManager(this, orientation, reverse));
+        mLayoutManager = new StickyHeadersLinearLayoutManager(this, orientation, reverse);
+        mRecyclerView.setLayoutManager(mLayoutManager);
         mProgressEmptyRecyclerFlipper.monitor(mAdapter);
         mRecyclerView.setAdapter(mAdapter);
+        mRecyclerView.setOnDragListener(new CombiningDragListener(
+                new ScrollerDragListener(
+                        new ScrollerDragListener.Callback() {
+                            @Override
+                            public boolean onDragStarted(ClipDescription description) {
+                                return true;
+                            }
+
+                            @Override
+                            public void onDragEnded(ClipDescription description) {
+
+                            }
+                        }, mRecyclerView),
+                new PlaceholderDragListener(mAdapter, mRecyclerView)));
     }
 }

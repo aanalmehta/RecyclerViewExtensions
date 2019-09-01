@@ -20,13 +20,15 @@ public class CombiningDragListener implements View.OnDragListener {
 
     @Override
     public boolean onDrag(View view, DragEvent event) {
+        boolean handled = false;
         for (int i = 0; i < onDragListeners.length; i++) {
             if (event.getAction() == DragEvent.ACTION_DRAG_STARTED) {
                 dragStartedResults[i] = onDragListeners[i].onDrag(view, event);
+                handled |= dragStartedResults[i];
             } else if (dragStartedResults[i]) {
-                onDragListeners[i].onDrag(view, event);
+                handled |= onDragListeners[i].onDrag(view, event);
             }
         }
-        return true;
+        return handled;
     }
 }

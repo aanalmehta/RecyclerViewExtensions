@@ -30,16 +30,16 @@ public class PlaceholderDragListener implements View.OnDragListener {
     public boolean onDrag(View v, DragEvent event) {
         switch (event.getAction()) {
             case DragEvent.ACTION_DRAG_STARTED:
-                position = callback.onDragStarted(event.getClipDescription());
+                position = callback.onDragStarted(event.getClipDescription(), event.getLocalState());
                 return position != RecyclerView.NO_POSITION;
             case DragEvent.ACTION_DRAG_LOCATION:
                 swap(event.getX(), event.getY());
                 break;
             case DragEvent.ACTION_DRAG_ENDED:
-                callback.onDragEnded(event.getClipDescription());
+                callback.onDragEnded(event.getClipDescription(), event.getLocalState());
                 break;
         }
-        return true;
+        return false;
     }
 
     private void swap(float x, float y) {
@@ -59,17 +59,17 @@ public class PlaceholderDragListener implements View.OnDragListener {
 
     public interface Callback {
         /**
-         * Signals that a drag has started. The {@link ClipDescription} can be inspected to determine whether the
-         * placeholder's position should track the drag.
+         * Signals that a drag has started. The {@code description} and {@code state} can be inspected to determine
+         * whether the placeholder's position should track the drag.
          *
          * @return an adapter position that should track the drag, or {@link RecyclerView#NO_POSITION} to skip it.
          */
-        int onDragStarted(ClipDescription description);
+        int onDragStarted(ClipDescription description, Object localState);
 
         /**
          * Swap {@code position} with {@code newPosition} in the adapter.
          *
-         * Only called if {@link #onDragStarted(ClipDescription)} returned {@code true}.
+         * Only called if {@link #onDragStarted(ClipDescription, Object)} returned {@code true}.
          *
          * @return the new position, ie. {@code newPosition} if it was swapped, {@code position} if not,
          * or any other position if it was moved somewhere else.
@@ -78,8 +78,9 @@ public class PlaceholderDragListener implements View.OnDragListener {
 
         /**
          * Signals that a drag has ended.
-         * Only called if {@link #onDragStarted(ClipDescription)} returned {@code true}.
+         *
+         * Only called if {@link #onDragStarted(ClipDescription, Object)} returned {@code true}.
          */
-        void onDragEnded(ClipDescription description);
+        void onDragEnded(ClipDescription description, Object localState);
     }
 }

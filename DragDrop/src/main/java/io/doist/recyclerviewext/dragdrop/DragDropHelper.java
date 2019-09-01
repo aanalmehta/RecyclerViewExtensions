@@ -249,6 +249,7 @@ public class DragDropHelper extends RecyclerView.ItemDecoration
     }
 
     private boolean handleMotionEvent(MotionEvent event) {
+        MotionEvent.obtain()
         if (mState != STATE_NONE && mState != STATE_STOPPING) {
             int action = event.getActionMasked();
             int x = (int) event.getX();
@@ -268,7 +269,7 @@ public class DragDropHelper extends RecyclerView.ItemDecoration
                 return true;
             }
             if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) {
-                // Stop the drag, the touch event as ended.
+                // Stop the drag, the touch event has ended.
                 stop();
                 return true;
             }
@@ -508,7 +509,7 @@ public class DragDropHelper extends RecyclerView.ItemDecoration
      * Updates the scroll speed for a decelerating motion, until {@code 0} is reached.
      */
     private void updateScrollSpeedDecelerating() {
-        mScrollSpeed = mScrollSpeedMax > 1 ? mScrollSpeed / 1.2f : 0f;
+        mScrollSpeed = mScrollSpeedMax > 1 ? mScrollSpeed / 1.18f : 0f;
     }
 
     /**

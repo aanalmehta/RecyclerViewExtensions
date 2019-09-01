@@ -96,6 +96,7 @@ public class ScrollerDragListener implements View.OnDragListener, Runnable {
             case DragEvent.ACTION_DRAG_LOCATION:
                 scroll(event.getX(), event.getY());
                 break;
+            case DragEvent.ACTION_DROP:
             case DragEvent.ACTION_DRAG_EXITED:
                 stop();
                 break;
@@ -104,7 +105,7 @@ public class ScrollerDragListener implements View.OnDragListener, Runnable {
                 callback.onDragEnded(event.getClipDescription());
                 break;
         }
-        return true;
+        return false;
     }
 
     /**
